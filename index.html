@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f8f2">
+  <meta name="description" content="Aspria — 資産の記録と、成長の軌跡。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <link rel="icon" href="./icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <title>Aspria | 資産の記録と推移</title>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <img src="./icon-192.png" alt="" width="40" height="40">
+        <div><strong>Aspria</strong><span>資産の記録と、成長の軌跡。</span></div>
+      </div>
+      <button class="icon-button" id="open-settings" type="button" aria-label="設定とデータ管理" title="設定とデータ管理">⚙</button>
+    </header>
+
+    <main>
+      <section class="view" id="view-home" aria-labelledby="home-title">
+        <div class="section-heading"><div><p class="eyebrow">DASHBOARD</p><h1 id="home-title">資産のいま</h1></div></div>
+        <div id="home-content"></div>
+      </section>
+
+      <section class="view" id="view-input" aria-labelledby="input-title" hidden>
+        <div class="section-heading"><div><p class="eyebrow">RECORD</p><h1 id="input-title">月次残高の入力</h1></div></div>
+        <div class="card month-selector"><label for="record-month">記録する年月</label><input id="record-month" type="month"></div>
+        <div id="input-content"></div>
+      </section>
+
+      <section class="view" id="view-analysis" aria-labelledby="analysis-title" hidden>
+        <div class="section-heading"><div><p class="eyebrow">INSIGHTS</p><h1 id="analysis-title">資産のふりかえり</h1></div></div>
+        <div class="card filters">
+          <label>グラフの種類<select id="chart-type"><option value="wealth">総資産と金融資産</option><option value="mix">資産構成比の推移</option><option value="delta">資産増減の寄与度</option></select></label>
+          <label>表示期間<select id="chart-range"><option value="12">直近1年</option><option value="36">直近3年</option><option value="60">直近5年</option><option value="all" selected>全期間</option></select></label>
+        </div>
+        <div id="analysis-content"></div>
+      </section>
+    </main>
+
+    <div id="save-state" class="save-state" role="status" aria-live="polite">読み込み中…</div>
+    <nav class="bottom-nav" aria-label="メインメニュー">
+      <button type="button" data-view="home" class="nav-button active" aria-current="page"><span aria-hidden="true">⌂</span><span>ホーム</span></button>
+      <button type="button" data-view="input" class="nav-button"><span aria-hidden="true">✎</span><span>入力</span></button>
+      <button type="button" data-view="analysis" class="nav-button"><span aria-hidden="true">▤</span><span>分析</span></button>
+    </nav>
+  </div>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-header"><h2 id="settings-title">設定とデータ管理</h2><button class="icon-button" id="close-settings" aria-label="閉じる" type="button">×</button></div>
+    <div class="dialog-body">
+      <section class="settings-section">
+        <h3>口座・資産の登録</h3>
+        <p class="help">銀行・財形・投資・有形資産の各項目を追加します。名称には口座番号などの機密情報を入れないことをおすすめします。</p>
+        <form id="account-form" class="account-form">
+          <input type="hidden" id="account-id">
+          <label>口座・資産名<input id="account-name" maxlength="80" required placeholder="例：A銀行 普通預金"></label>
+          <label>分類<select id="account-category"><option value="bank">銀行口座</option><option value="savings">財形貯蓄</option><option value="investment">投資</option><option value="physical">有形資産</option></select></label>
+          <div class="form-grid"><label>記録開始月（任意）<input type="month" id="account-start"></label><label>記録終了月（任意）<input type="month" id="account-end"></label></div>
+          <div class="button-row"><button type="submit" class="primary-button">口座を保存</button><button type="button" class="ghost-button" id="cancel-account">入力をクリア</button></div>
+        </form>
+        <div id="account-list"></div>
+      </section>
+      <section class="settings-section">
+        <h3>バックアップと手動同期</h3>
+        <p class="help">保存内容はこの端末内にあります。「JSON書き出し」でファイルを保存し、Google Driveの非共有フォルダへ手動で移してください。</p>
+        <div class="button-row"><button type="button" class="primary-button" id="export-json">JSONを書き出す</button><button type="button" class="outline-button" id="import-json">JSONを読み込む</button></div>
+        <input type="file" accept=".json,application/json" id="import-file" hidden>
+        <p class="help warning">JSONには口座名と残高が平文で含まれます。GitHubには絶対にアップロードしないでください。読み込みは端末内の現在データを置き換えます。</p>
+      </section>
+      <section class="settings-section">
+        <h3>初期版の動作確認</h3>
+        <p class="help">実データを使う前に、架空の口座・残高で動作を確認できます。</p>
+        <div class="button-row"><button type="button" class="outline-button" id="load-demo">サンプルデータを設定</button><button type="button" class="danger-button" id="clear-all">全データを初期化</button></div>
+      </section>
+      <p class="small-print">Aspria v0.1 · 外部ライブラリなし · データの外部自動送信なし</p>
+    </div>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+</body>
+</html>

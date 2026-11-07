@@ -1,0 +1,15 @@
+{
+  "name": "Aspria — 資産の記録と推移",
+  "short_name": "Aspria",
+  "description": "資産の記録と、成長の軌跡。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f8f2",
+  "theme_color": "#f5f8f2",
+  "lang": "ja",
+  "icons": [
+    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
