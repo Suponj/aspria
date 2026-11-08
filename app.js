@@ -1,5 +1,5 @@
 'use strict';
-/* Aspria v0.1: all asset information stays in this browser's IndexedDB unless the user exports JSON. */
+/* Aspria v0.2: all asset information stays in this browser's IndexedDB unless the user exports JSON. */
 const CATEGORIES = [
   {key:'bank',label:'銀行口座',color:'#80a9c7'},
   {key:'savings',label:'財形貯蓄',color:'#d8b871'},
@@ -66,13 +66,13 @@ function svgEl(name,attrs={},txt){const s=document.createElementNS('http://www.w
 function renderLineChart(rows){const w=354,h=235,l=50,r=14,t=12,b=36,plotW=w-l-r,plotH=h-t-b,s=svgRoot(w,h);const lo=Math.min(...rows.flatMap(p=>[p.total,p.financial]));const hi=Math.max(...rows.map(p=>p.total));const mn=Math.max(0,lo-(hi-lo)*.23);const mx=hi===mn?mn+1:hi+(hi-lo)*.15;const first=monthIndex(rows[0].month),last=monthIndex(rows.at(-1).month);const x=m=>l+(monthIndex(m)-first)/Math.max(1,last-first)*plotW;const y=v=>t+(mx-v)/(mx-mn)*plotH;
   for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4;const yp=y(val);s.append(svgEl('line',{x1:l,y1:yp,x2:w-r,y2:yp,stroke:'#e0e8dd'}),svgEl('text',{x:l-7,y:yp+4,'text-anchor':'end',fill:'#76857b','font-size':10},shortMoney(val)));}
   for(const [key,color] of [['total','#3d6f4b'],['financial','#83abc9']]){const d=rows.map((v,i)=>`${i?'L':'M'} ${x(v.month).toFixed(2)} ${y(v[key]).toFixed(2)}`).join(' ');if(rows.length>1)s.append(svgEl('path',{d,fill:'none',stroke:color,'stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'}));rows.forEach(v=>s.append(svgEl('circle',{cx:x(v.month),cy:y(v[key]),r:3.2,fill:color,stroke:'white','stroke-width':1})));}
-  const mid=rows[Math.floor((rows.length-1)/2)].month;for(const m of [...new Set([rows[0].month,mid,rows.at(-1).month])])s.append(svgEl('text',{x:x(m),y:h-9,'text-anchor':'middle',fill:'#76857b','font-size':10},m.replace('-','/')));
+  const mid=rows[Math.floor((rows.length-1)/2)].month;for(const m of [...new Set([rows[0].month,mid,rows.at(-1).month])])s.append(svgEl('text',{x:x(m),y:h-9,'text-anchor':m===rows[0].month?'start':m===rows.at(-1).month?'end':'middle',fill:'#76857b','font-size':10},m.replace('-','/')));
   return s;
 }
 function renderStackedChart(rows){const w=354,h=235,l=44,r=14,t=12,b=36,pw=w-l-r,ph=h-t-b,s=svgRoot(w,h);const first=monthIndex(rows[0].month),last=monthIndex(rows.at(-1).month);const x=m=>l+(monthIndex(m)-first)/Math.max(1,last-first)*pw;const y=p=>t+(100-p)/100*ph;
   for(let i=0;i<=4;i++){const percent=i*25,yp=y(percent);s.append(svgEl('line',{x1:l,y1:yp,x2:w-r,y2:yp,stroke:'#e0e8dd'}),svgEl('text',{x:l-7,y:yp+4,'text-anchor':'end',fill:'#76857b','font-size':10},`${percent}%`));}
   const running=rows.map(()=>0);for(const category of CATEGORIES){const bottom=[...running];rows.forEach((v,i)=>running[i]+=v.sums[category.key]/v.total*100);const top=[...running];const pts=[...rows.map((v,i)=>`${x(v.month)},${y(top[i])}`),...rows.map((v,i)=>`${x(v.month)},${y(bottom[i])}`).reverse()];if(rows.length>1)s.append(svgEl('polygon',{points:pts.join(' '),fill:category.color,opacity:.86,stroke:'white','stroke-width':1}));else{s.append(svgEl('rect',{x:l-5,y:y(top[0]),width:10,height:y(bottom[0])-y(top[0]),fill:category.color}));}}
-  const mid=rows[Math.floor((rows.length-1)/2)].month;for(const m of [...new Set([rows[0].month,mid,rows.at(-1).month])])s.append(svgEl('text',{x:x(m),y:h-9,'text-anchor':'middle',fill:'#76857b','font-size':10},m.replace('-','/')));return s;
+  const mid=rows[Math.floor((rows.length-1)/2)].month;for(const m of [...new Set([rows[0].month,mid,rows.at(-1).month])])s.append(svgEl('text',{x:x(m),y:h-9,'text-anchor':m===rows[0].month?'start':m===rows.at(-1).month?'end':'middle',fill:'#76857b','font-size':10},m.replace('-','/')));return s;
 }
 function chartLegend(pairs){const row=el('div','legend');for(const [title,color] of pairs){const line=el('span');const dot=el('i','dot');dot.style.background=color;append(line,dot,document.createTextNode(title));row.append(line);}return row;}
 function renderAnalysis(){const root=$('analysis-content');root.replaceChildren();const rows=pointsForRange(completeMonths());const type=$('chart-type').value;if(!rows.length){root.append(emptyCard('まだ確定した記録がありません','対象月のすべての口座に残高が入力されると、グラフに表示されます。','月次入力へ',()=>setView('input')));return;}
@@ -91,6 +91,174 @@ async function exportJSON(){await persistQueue.catch(()=>{});const data=JSON.str
 async function importJSON(file){if(!file)return;try{if(file.size>15*1024*1024)throw Error('ファイルが大きすぎます。');const imported=validateImport(JSON.parse(await file.text()));if(!confirm(`「${file.name}」を読み込みます。端末内の現在データ（${state.accounts.length}口座）を全て置き換えます。よろしいですか？`))return;state=imported;await persist();resetAccountForm();renderAccounts();renderView();notify('JSONを読み込みました');$('settings-dialog').close();}catch(e){notify(`読み込みに失敗しました：${e.message}`);}finally{$('import-file').value='';}}
 function loadDemo(){if(state.accounts.length||Object.keys(state.records).length){if(!confirm('現在のすべてのデータを架空のサンプルに置き換えます。よろしいですか？'))return;}const samples=[['A銀行 普通預金','bank',2800000],['B銀行 定期預金','bank',650000],['一般財形','savings',1550000],['C証券','investment',3300000],['自動車','physical',1200000]];const accounts=samples.map(([name,category])=>({id:newId(),name,category,start:'2025-01',end:''}));const records={};const end=offsetMonth(localMonth(),-1);for(let i=11;i>=0;i--){const month=offsetMonth(end,-i);records[month]={};accounts.forEach((a,j)=>{const base=samples[j][2];const step=11-i;const amount=Math.max(0,Math.round(base+step*[11000,900,6000,40000,-17000][j]+(j===3?Math.sin(step*1.2)*120000:0)));records[month][a.id]={status:'recorded',amount};});}state={version:1,accounts,records,updatedAt:null};selectedMonth=end;$('record-month').value=selectedMonth;persist();renderView();renderAccounts();if($('settings-dialog').open)$('settings-dialog').close();notify('架空のサンプルデータを設定しました');}
 function clearAll(){if(!confirm('すべての口座と残高の記録を削除します。JSONバックアップはありますか？'))return;if(!confirm('本当に初期化しますか？ この操作は取り消せません。'))return;state=DEFAULT_STATE();selectedMonth=localMonth();persist();resetAccountForm();renderAccounts();renderView();$('settings-dialog').close();notify('端末内データを初期化しました');}
+/* v0.2: Excel import UI and safe merge/replace. User-picked files are processed in memory. */
+let excelWorkbook = null;
+function excelPreviewMessage(message,warning=false){
+  const node=$('excel-month-result');node.textContent=message;node.classList.toggle('excel-warning',warning);
+}
+function getExcelMonths(){
+  if(!excelWorkbook)throw Error('Excelを先に選択してください。');
+  return AspriaExcel.resolveMonths(excelWorkbook.headers,$('excel-first-month').value);
+}
+function guessCategory(name){
+  if(/財形/.test(name))return 'savings';
+  if(/証券|投信|投資|株式|ETF|NISA/i.test(name))return 'investment';
+  if(/車|自動車|不動産|有形/.test(name))return 'physical';
+  if(/銀行|預金|信用金庫|ゆうちょ/.test(name))return 'bank';
+  return '';
+}
+function excelMappingRows(){return [...document.querySelectorAll('#excel-account-mapping .excel-map')];}
+function createOption(value,label){const opt=el('option','',label);opt.value=value;return opt;}
+function showExcelMapping(){
+  const root=$('excel-account-mapping');
+  const prior=new Map([...root.querySelectorAll('.excel-map')].map(holder=>[
+    Number(holder.dataset.index),{
+      name:holder.querySelector('.excel-map-name').value,
+      category:holder.querySelector('.excel-map-category').value,
+      target:holder.querySelector('.excel-map-target').value
+    }
+  ]));
+  root.replaceChildren();
+  if(!excelWorkbook)return;
+  const mode=$('excel-mode').value;
+  for(let i=0;i<excelWorkbook.rows.length;i++){
+    const source=excelWorkbook.rows[i], priorValue=prior.get(i);const holder=el('div','excel-map');holder.dataset.index=String(i);
+    holder.append(el('div','excel-map-heading',`Excel ${source.excelRow}行目：${source.name}`));
+    const nameLabel=el('label','','登録名');nameLabel.classList.add('wide');
+    const nameInput=el('input');nameInput.value=priorValue?.name||source.name;nameInput.maxLength=80;nameInput.className='excel-map-name';nameLabel.append(nameInput);
+    const targetLabel=el('label','','取り込み先');targetLabel.classList.add('wide');
+    const target=el('select','excel-map-target');target.append(createOption('new','新しい口座・資産として登録'));
+    if(mode==='merge')state.accounts.forEach(a=>target.append(createOption(a.id,`${a.name}（${catInfo(a.category).label}）`)));
+    const auto=mode==='merge'?state.accounts.find(a=>a.name===source.name):null;
+    if(auto)target.value=auto.id;
+    if(priorValue?.target && [...target.options].some(o=>o.value===priorValue.target))target.value=priorValue.target;
+    targetLabel.append(target);
+    const catLabel=el('label','','分類');catLabel.classList.add('wide');catLabel.classList.add('excel-map-cat-wrap');
+    const category=el('select','excel-map-category');category.append(createOption('','-- 分類を選んでください --'));
+    CATEGORIES.forEach(c=>category.append(createOption(c.key,c.label)));
+    category.value=priorValue?.category||guessCategory(source.name);catLabel.append(category);
+    const refresh=()=>{
+      const isNew=target.value==='new';
+      catLabel.classList.toggle('hidden',!isNew);
+      nameInput.disabled=!isNew;
+    };
+    target.addEventListener('change',refresh);refresh();
+    holder.append(nameLabel,targetLabel,catLabel);root.append(holder);
+  }
+}
+function showExcelPreviewMonths(){
+  try{
+    const months=getExcelMonths(), skipped=(monthIndex(months.at(-1))-monthIndex(months[0])+1)-months.length;
+    excelPreviewMessage(`${monthLabel(months[0])} ～ ${monthLabel(months.at(-1))} ／ ${months.length}列の記録${skipped?`（途中に未記録の月が${skipped}か月あります）`:''}`);
+    $('excel-apply').disabled=false;
+  }catch(e){excelPreviewMessage(e.message,true);$('excel-apply').disabled=true;}
+}
+async function onExcelSelected(file){
+  if(!file)return;
+  try{
+    const book=await AspriaExcel.readWorkbook(file);excelWorkbook=book;
+    $('excel-account-mapping').replaceChildren();
+    $('excel-preview').hidden=false;
+    const summary=$('excel-file-summary');
+    summary.textContent=`${book.fileName}／${book.sheetName}：${book.rows.length}口座、${book.headers.length}か月、残高あり ${book.amounts}件・空欄 ${book.missing}件。`;
+    summary.classList.add('excel-summary');
+    $('excel-first-month').value='2024-12';
+    $('excel-mode').value='merge';
+    showExcelMapping();showExcelPreviewMonths();
+    $('excel-import-note').textContent=!book.amounts
+      ?'このExcelは金額がすべて空欄です。口座と年月のみ取り込めますが、グラフのデータにはなりません。'
+      :'空欄は未記録として扱います。口座未開設などの期間は、取り込み後に口座設定の「記録開始月」で調整できます。';
+    $('excel-import-note').classList.toggle('excel-warning',!book.amounts);
+  }catch(e){excelWorkbook=null;$('excel-preview').hidden=true;notify('Excelを読み取れません：'+e.message);}
+  finally{$('excel-file').value='';}
+}
+function planExcelImport(){
+  const months=getExcelMonths(), mode=$('excel-mode').value;
+  const next=mode==='replace'?DEFAULT_STATE():structuredClone(state);
+  const mappings=[];const ids=new Set();const newNames=new Set();
+  let newAccounts=0;
+  for(const holder of excelMappingRows()){
+    const i=Number(holder.dataset.index), source=excelWorkbook.rows[i];
+    const target=holder.querySelector('.excel-map-target').value;
+    let a;
+    if(target==='new'){
+      const name=holder.querySelector('.excel-map-name').value.trim();
+      const cat=holder.querySelector('.excel-map-category').value;
+      if(!name||name.length>80)throw Error(`${source.excelRow}行目の口座名を確認してください。`);
+      if(!catInfo(cat))throw Error(`「${name}」の分類を選んでください。`);
+      if(newNames.has(name)||next.accounts.some(ex=>ex.name===name))throw Error(`「${name}」が重複しています。既存口座を選ぶか名称を変更してください。`);
+      newNames.add(name);
+      a={id:newId(),name,category:cat,start:months[0],end:''};
+      next.accounts.push(a);newAccounts++;
+    }else{
+      a=next.accounts.find(ex=>ex.id===target);
+      if(!a)throw Error('選択された取り込み先がありません。');
+    }
+    if(ids.has(a.id))throw Error('複数のExcel行を同じ口座に紐づけています。取り込み先を分けてください。');
+    ids.add(a.id);mappings.push({source,account:a});
+  }
+  let added=0,skipped=0,filled=0;
+  for(let j=0;j<months.length;j++){
+    const month=months[j];if(!next.records[month])next.records[month]={};
+    for(const {source,account} of mappings){
+      const value=source.values[j],old=next.records[month][account.id];
+      if(mode==='merge' && old){
+        if(value===null)continue;
+        if(old.status==='recorded'){skipped++;continue;}
+        if(old.status==='draft'){skipped++;continue;}
+        if(old.status==='missing'){next.records[month][account.id]={status:'recorded',amount:value};filled++;continue;}
+      }
+      if(value===null){
+        if(!old)next.records[month][account.id]={status:'missing'};
+      }else{
+        next.records[month][account.id]={status:'recorded',amount:value};added++;
+      }
+    }
+  }
+  const checked=validateImport(next);
+  return {next:checked,months,newAccounts,added,skipped,filled,mode};
+}
+function downloadLocalBackup(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=`aspria_before_excel_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),20000);
+}
+async function applyExcelImport(){
+  try{
+    const plan=planExcelImport(), accountTotal=plan.next.accounts.length;
+    const overview=`${plan.months.length}か月／${excelWorkbook.rows.length}口座（新規 ${plan.newAccounts}）\n残高：追加 ${plan.added}件、未記録の補完 ${plan.filled}件、既存優先のスキップ ${plan.skipped}件。`;
+    const hasData=state.accounts.length>0||Object.keys(state.records).length>0;
+    const modeNotice=plan.mode==='replace'?'現在の口座・残高はすべて置き換わります。':'既存データを保持し、追加・補完します。';
+    if(!confirm(`${overview}\n${modeNotice}\n\nこの内容で取り込みますか？`))return;
+    if(hasData){
+      if(!confirm('取り込み前に現在のJSONバックアップをダウンロードします。保存後に続行してください。よろしいですか？'))return;
+      downloadLocalBackup();
+      if(!confirm('バックアップJSONが端末へ保存されたことを確認しましたか？ 未確認の場合はキャンセルして保存先を確認してください。'))return;
+    }
+    $('excel-apply').disabled=true;
+    await persistQueue.catch(()=>{});
+    plan.next.updatedAt=new Date().toISOString();
+    await writeLocal(structuredClone(plan.next)); // One IndexedDB transaction; no partial state replacement.
+    state=plan.next;
+    selectedMonth=plan.months.at(-1);$('record-month').value=selectedMonth;
+    excelWorkbook=null;$('excel-preview').hidden=true;
+    resetAccountForm();renderAccounts();renderView();
+    $('settings-dialog').close();
+    notify(`Excel取り込み完了：${accountTotal}口座、${plan.added+plan.filled}件の残高を反映しました。`);
+  }catch(e){notify('取り込みできません：'+e.message);}
+  finally{$('excel-apply').disabled=false;}
+}
+function setupExcelImport(){
+  $('excel-choose').addEventListener('click',()=>$('excel-file').click());
+  $('excel-file').addEventListener('change',e=>onExcelSelected(e.target.files?.[0]));
+  $('excel-first-month').addEventListener('change',showExcelPreviewMonths);
+  $('excel-mode').addEventListener('change',showExcelMapping);
+  $('excel-apply').addEventListener('click',applyExcelImport);
+  $('excel-cancel').addEventListener('click',()=>{excelWorkbook=null;$('excel-preview').hidden=true;$('excel-file').value='';});
+}
+
 async function start(){try{const stored=await loadLocal();if(stored)state=validateImport(stored);$('save-state').textContent='✓ この端末に保存されています';}catch(err){$('save-state').textContent='⚠ データの保存領域を読み込めませんでした';notify('ブラウザの保存領域が使えません。通常モードで開いてください。');}
   $('record-month').value=selectedMonth;$('record-month').addEventListener('change',e=>{if(isMonth(e.target.value)){selectedMonth=e.target.value;renderInput();}});
   document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
@@ -100,6 +268,7 @@ async function start(){try{const stored=await loadLocal();if(stored)state=valida
   $('account-form').addEventListener('submit',saveAccount);$('cancel-account').addEventListener('click',resetAccountForm);
   $('export-json').addEventListener('click',exportJSON);$('import-json').addEventListener('click',()=>$('import-file').click());$('import-file').addEventListener('change',e=>importJSON(e.target.files?.[0]));
   $('load-demo').addEventListener('click',loadDemo);$('clear-all').addEventListener('click',clearAll);
+  setupExcelImport();
   renderView();
   if('serviceWorker'in navigator && location.protocol==='https:'){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
 }

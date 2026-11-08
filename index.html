@@ -11,6 +11,8 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
   <title>Aspria | 資産の記録と推移</title>
+  <script src="./jszip.min.js" defer></script>
+  <script src="./excel-import.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -76,11 +78,35 @@
         <p class="help warning">JSONには口座名と残高が平文で含まれます。GitHubには絶対にアップロードしないでください。読み込みは端末内の現在データを置き換えます。</p>
       </section>
       <section class="settings-section">
+        <h3>Excelの取り込み</h3>
+        <p class="help">B4～B16の口座名、C3以降の記録月、対応する金額を読み取ります。<strong>Excelのファイルは端末内だけで処理し、外部へ送信しません。</strong> 現在のサンプルデータを実データに切り替えるときは「すべて置き換える」を選んでください。</p>
+        <button type="button" class="outline-button" id="excel-choose">Excel（.xlsx）を選択</button>
+        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" id="excel-file" hidden>
+        <div id="excel-preview" hidden>
+          <p class="help" id="excel-file-summary" aria-live="polite"></p>
+          <label class="excel-label">最初の記録年月
+            <input type="month" id="excel-first-month" value="2024-12">
+          </label>
+          <p class="help" id="excel-month-result"></p>
+          <label class="excel-label">取り込み方法
+            <select id="excel-mode">
+              <option value="merge">既存の記録に追加する（同じ口座・月は既存を優先）</option>
+              <option value="replace">現在のデータをすべて置き換える</option>
+            </select>
+          </label>
+          <h4>口座と分類の確認</h4>
+          <p class="help">Excelの口座名を編集し、4分類へ割り当てます。既存口座に紐付けることもできます。</p>
+          <div id="excel-account-mapping"></div>
+          <p class="help" id="excel-import-note"></p>
+          <div class="button-row"><button class="primary-button" id="excel-apply" type="button">内容を確認して取り込む</button><button class="ghost-button" id="excel-cancel" type="button">キャンセル</button></div>
+        </div>
+      </section>
+      <section class="settings-section">
         <h3>初期版の動作確認</h3>
         <p class="help">実データを使う前に、架空の口座・残高で動作を確認できます。</p>
         <div class="button-row"><button type="button" class="outline-button" id="load-demo">サンプルデータを設定</button><button type="button" class="danger-button" id="clear-all">全データを初期化</button></div>
       </section>
-      <p class="small-print">Aspria v0.1 · 外部ライブラリなし · データの外部自動送信なし</p>
+      <p class="small-print">Aspria v0.2 · Excel読み込み用ライブラリはアプリに同梱 · 資産データの外部自動送信なし</p>
     </div>
   </dialog>
   <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>

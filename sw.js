@@ -1,5 +1,5 @@
-const CACHE_NAME = 'aspria-v0.1.0';
-const APP_FILES = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE_NAME = 'aspria-v0.2.0';
+const APP_FILES = ['./', './index.html', './style.css', './app.js', './excel-import.js', './jszip.min.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
 });
