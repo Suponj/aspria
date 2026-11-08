@@ -25,3 +25,8 @@ dialog .dialog-body{max-height:calc(88dvh - 70px);overflow-y:auto}
 .excel-status[hidden]{display:none}
 .excel-status.excel-error{background:#fff3ea;border-color:#e9bd9c;color:#924827}
 .excel-status.excel-success{background:#eaf5e8;border-color:#b8d5b4;color:#336b44}
+
+/* v0.2.2: explicit user action after Android file selection */
+.excel-analyze-row{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.excel-analyze-row button{min-height:44px}
+.excel-init-status{font-size:11px;color:var(--sub);margin:7px 0}

@@ -9,11 +9,11 @@
   <link rel="icon" href="./icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=0.2.2">
   <title>Aspria | 資産の記録と推移</title>
   <script src="./jszip.min.js" defer></script>
-  <script src="./excel-import.js" defer></script>
-  <script src="./app.js" defer></script>
+  <script src="./excel-import.js?v=0.2.2" defer></script>
+  <script src="./app.js?v=0.2.2" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -82,6 +82,10 @@
         <p class="help">B4～B16の口座名、C3以降の記録月、対応する金額を読み取ります。<strong>Excelのファイルは端末内だけで処理し、外部へ送信しません。</strong> 現在のサンプルデータを実データに切り替えるときは「すべて置き換える」を選んでください。</p>
         <label for="excel-file" class="excel-picker-label">取り込むExcelファイル（.xlsx）</label>
         <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" id="excel-file" class="excel-file-input" aria-describedby="excel-status">
+        <!-- Kept for compatibility with cached v0.2 JavaScript during updates -->
+        <button type="button" id="excel-choose" hidden aria-hidden="true" tabindex="-1"></button>
+        <div class="excel-analyze-row"><button class="primary-button" id="excel-analyze" type="button">選択したExcelを解析する</button></div>
+        <p id="excel-init-status" class="help excel-init-status" aria-live="polite">Excel機能を準備しています…</p>
         <p id="excel-status" class="excel-status" role="status" aria-live="polite" hidden></p>
         <div id="excel-preview" hidden>
           <p class="help" id="excel-file-summary" aria-live="polite"></p>
@@ -107,7 +111,7 @@
         <p class="help">実データを使う前に、架空の口座・残高で動作を確認できます。</p>
         <div class="button-row"><button type="button" class="outline-button" id="load-demo">サンプルデータを設定</button><button type="button" class="danger-button" id="clear-all">全データを初期化</button></div>
       </section>
-      <p class="small-print">Aspria v0.2.1 · Excel読み込み用ライブラリはアプリに同梱 · 資産データの外部自動送信なし</p>
+      <p class="small-print">Aspria v0.2.2 · Excel読み込み用ライブラリはアプリに同梱 · 資産データの外部自動送信なし</p>
     </div>
   </dialog>
   <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>

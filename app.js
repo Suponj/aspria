@@ -1,5 +1,5 @@
 'use strict';
-/* Aspria v0.2: all asset information stays in this browser's IndexedDB unless the user exports JSON. */
+/* Aspria v0.2.2: all asset information stays in this browser's IndexedDB unless the user exports JSON. */
 const CATEGORIES = [
   {key:'bank',label:'銀行口座',color:'#80a9c7'},
   {key:'savings',label:'財形貯蓄',color:'#d8b871'},
@@ -161,6 +161,7 @@ function excelStatus(message, kind='info'){
 }
 async function onExcelSelected(file){
   if(!file){excelStatus('ファイルが選択されていません。Excelファイルをもう一度選んでください。','error');return;}
+  $('excel-analyze').disabled=true;
   excelWorkbook=null;
   $('excel-preview').hidden=true;
   excelStatus(`「${file.name}」を読み込んでいます…`);
@@ -186,7 +187,7 @@ async function onExcelSelected(file){
     excelWorkbook=null;
     $('excel-preview').hidden=true;
     excelStatus(`読み込みに失敗しました（${file.name}）：${e?.message||String(e)} ファイルがExcel形式（.xlsx）であること、GitHubに必要なファイルがそろっていることをご確認ください。`,'error');
-  }finally{$('excel-file').value='';}
+  }finally{$('excel-file').value='';$('excel-analyze').disabled=false;}
 }
 function planExcelImport(){
   const months=getExcelMonths(), mode=$('excel-mode').value;
@@ -267,7 +268,21 @@ async function applyExcelImport(){
   finally{$('excel-apply').disabled=false;}
 }
 function setupExcelImport(){
-  $('excel-file').addEventListener('change',e=>onExcelSelected(e.target.files?.[0]));
+  // v0.2.2: an explicit analyze button works even if Android's file picker
+  // restores the file input without dispatching a "change" event.
+  const picker=$('excel-file');
+  const analyze=$('excel-analyze');
+  picker.addEventListener('change',()=>{
+    const file=picker.files?.[0];
+    if(file){excelStatus(`「${file.name}」を選択しました。「選択したExcelを解析する」を押してください。`);}
+    else{excelStatus('ファイルの選択がキャンセルされました。');}
+  });
+  analyze.addEventListener('click',()=>{
+    const file=picker.files?.[0];
+    if(!file){excelStatus('Excelファイルが選択されていません。先に「ファイルを選択」から.xlsxファイルを選んでください。','error');return;}
+    onExcelSelected(file);
+  });
+  $('excel-init-status').textContent='Excel機能 v0.2.2 準備完了';
   $('excel-first-month').addEventListener('change',showExcelPreviewMonths);
   $('excel-mode').addEventListener('change',showExcelMapping);
   $('excel-apply').addEventListener('click',applyExcelImport);
