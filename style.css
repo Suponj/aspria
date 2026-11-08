@@ -30,3 +30,13 @@ dialog .dialog-body{max-height:calc(88dvh - 70px);overflow-y:auto}
 .excel-analyze-row{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
 .excel-analyze-row button{min-height:44px}
 .excel-init-status{font-size:11px;color:var(--sub);margin:7px 0}
+
+/* v0.3: discrete privacy toggle, month details, and more legible timeline */
+.header-actions{display:flex;align-items:center;gap:8px}
+.privacy-toggle{font-size:12px;line-height:1;font-weight:700;width:auto;min-width:48px;padding:0 9px}.privacy-toggle.is-private{background:#e5efe2;color:#3d6f4b}
+.detail-month-label{font-size:12px;font-weight:700;color:var(--sub);display:flex;justify-content:space-between;align-items:center;gap:8px;margin:5px 0 12px}
+.detail-month-picker{min-width:140px;max-width:67%;font-size:13px}
+.month-detail-status{margin:6px 0 10px}.month-category-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:10px 0;font-size:13px}
+.month-category-meta{font-size:11px;color:var(--sub)}.month-detail-value{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;text-align:right}
+.privacy-footnote{padding:0 8px}
+.chart-wrap svg circle[role="button"]:focus-visible{outline:2px solid #557f63}
