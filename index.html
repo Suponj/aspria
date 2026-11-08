@@ -80,8 +80,9 @@
       <section class="settings-section">
         <h3>Excelの取り込み</h3>
         <p class="help">B4～B16の口座名、C3以降の記録月、対応する金額を読み取ります。<strong>Excelのファイルは端末内だけで処理し、外部へ送信しません。</strong> 現在のサンプルデータを実データに切り替えるときは「すべて置き換える」を選んでください。</p>
-        <button type="button" class="outline-button" id="excel-choose">Excel（.xlsx）を選択</button>
-        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" id="excel-file" hidden>
+        <label for="excel-file" class="excel-picker-label">取り込むExcelファイル（.xlsx）</label>
+        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" id="excel-file" class="excel-file-input" aria-describedby="excel-status">
+        <p id="excel-status" class="excel-status" role="status" aria-live="polite" hidden></p>
         <div id="excel-preview" hidden>
           <p class="help" id="excel-file-summary" aria-live="polite"></p>
           <label class="excel-label">最初の記録年月
@@ -106,7 +107,7 @@
         <p class="help">実データを使う前に、架空の口座・残高で動作を確認できます。</p>
         <div class="button-row"><button type="button" class="outline-button" id="load-demo">サンプルデータを設定</button><button type="button" class="danger-button" id="clear-all">全データを初期化</button></div>
       </section>
-      <p class="small-print">Aspria v0.2 · Excel読み込み用ライブラリはアプリに同梱 · 資産データの外部自動送信なし</p>
+      <p class="small-print">Aspria v0.2.1 · Excel読み込み用ライブラリはアプリに同梱 · 資産データの外部自動送信なし</p>
     </div>
   </dialog>
   <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>

@@ -153,9 +153,20 @@ function showExcelPreviewMonths(){
     $('excel-apply').disabled=false;
   }catch(e){excelPreviewMessage(e.message,true);$('excel-apply').disabled=true;}
 }
+function excelStatus(message, kind='info'){
+  const node=$('excel-status');
+  node.textContent=message;
+  node.hidden=!message;
+  node.className='excel-status'+(kind==='error'?' excel-error':kind==='success'?' excel-success':'');
+}
 async function onExcelSelected(file){
-  if(!file)return;
+  if(!file){excelStatus('ファイルが選択されていません。Excelファイルをもう一度選んでください。','error');return;}
+  excelWorkbook=null;
+  $('excel-preview').hidden=true;
+  excelStatus(`「${file.name}」を読み込んでいます…`);
   try{
+    if(!window.JSZip)throw Error('jszip.min.js が読み込まれていません。GitHubに jszip.min.js がアップロードされているか確認し、アプリを再読み込みしてください。');
+    if(!window.AspriaExcel)throw Error('excel-import.js が読み込まれていません。GitHubに excel-import.js がアップロードされているか確認し、アプリを再読み込みしてください。');
     const book=await AspriaExcel.readWorkbook(file);excelWorkbook=book;
     $('excel-account-mapping').replaceChildren();
     $('excel-preview').hidden=false;
@@ -169,8 +180,13 @@ async function onExcelSelected(file){
       ?'このExcelは金額がすべて空欄です。口座と年月のみ取り込めますが、グラフのデータにはなりません。'
       :'空欄は未記録として扱います。口座未開設などの期間は、取り込み後に口座設定の「記録開始月」で調整できます。';
     $('excel-import-note').classList.toggle('excel-warning',!book.amounts);
-  }catch(e){excelWorkbook=null;$('excel-preview').hidden=true;notify('Excelを読み取れません：'+e.message);}
-  finally{$('excel-file').value='';}
+    excelStatus(`読み込み成功：${book.rows.length}口座・${book.headers.length}か月を検出しました。下の分類設定を確認してください。`,'success');
+  }catch(e){
+    console.error('Aspria Excel import error:',e);
+    excelWorkbook=null;
+    $('excel-preview').hidden=true;
+    excelStatus(`読み込みに失敗しました（${file.name}）：${e?.message||String(e)} ファイルがExcel形式（.xlsx）であること、GitHubに必要なファイルがそろっていることをご確認ください。`,'error');
+  }finally{$('excel-file').value='';}
 }
 function planExcelImport(){
   const months=getExcelMonths(), mode=$('excel-mode').value;
@@ -251,12 +267,11 @@ async function applyExcelImport(){
   finally{$('excel-apply').disabled=false;}
 }
 function setupExcelImport(){
-  $('excel-choose').addEventListener('click',()=>$('excel-file').click());
   $('excel-file').addEventListener('change',e=>onExcelSelected(e.target.files?.[0]));
   $('excel-first-month').addEventListener('change',showExcelPreviewMonths);
   $('excel-mode').addEventListener('change',showExcelMapping);
   $('excel-apply').addEventListener('click',applyExcelImport);
-  $('excel-cancel').addEventListener('click',()=>{excelWorkbook=null;$('excel-preview').hidden=true;$('excel-file').value='';});
+  $('excel-cancel').addEventListener('click',()=>{excelWorkbook=null;$('excel-preview').hidden=true;$('excel-file').value='';excelStatus('');});
 }
 
 async function start(){try{const stored=await loadLocal();if(stored)state=validateImport(stored);$('save-state').textContent='✓ この端末に保存されています';}catch(err){$('save-state').textContent='⚠ データの保存領域を読み込めませんでした';notify('ブラウザの保存領域が使えません。通常モードで開いてください。');}
